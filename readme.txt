@@ -1,0 +1,1 @@
+After install check Site Administration -> Plugins -> Local -> Page Hints :)

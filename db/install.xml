@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<XMLDB PATH="local/page_hints/db" VERSION="20120828" COMMENT="These tables store information on what page_hints you would like to include on each page, and which users have seen them."
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd"
+>
+  <TABLES>
+    <TABLE NAME="local_page_hints_instances" COMMENT="A row for each page_hint which will be shown on the site" NEXT="local_page_hints_tracker">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true" NEXT="enabled"/>
+        <FIELD NAME="enabled" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="1" SEQUENCE="false" COMMENT="Should the page_hint be displayed to normal users?" PREVIOUS="id" NEXT="positionx"/>
+        <FIELD NAME="positionx" TYPE="char" LENGTH="10" NOTNULL="true" DEFAULT="40%" SEQUENCE="false" COMMENT="the x position for the top left of the page_hint box including measurement unit" PREVIOUS="enabled" NEXT="positiony"/>
+        <FIELD NAME="positiony" TYPE="char" LENGTH="10" NOTNULL="true" DEFAULT="45%" SEQUENCE="false" COMMENT="The y position for the top left of the page_hint including units" PREVIOUS="positionx" NEXT="anchorx"/>
+        <FIELD NAME="anchorx" TYPE="char" LENGTH="5" NOTNULL="true" DEFAULT="left" SEQUENCE="false" COMMENT="The reference for position as used in CSS on the horizontal axis. This must be either &quot;left&quot; or &quot;right&quot;" PREVIOUS="positiony" NEXT="anchory"/>
+        <FIELD NAME="anchory" TYPE="char" LENGTH="6" NOTNULL="true" DEFAULT="top" SEQUENCE="false" COMMENT="The reference for position as used in CSS on the vertical axis. This must be either &quot;top&quot; or &quot;bottom&quot;" PREVIOUS="anchorx" NEXT="sizex"/>
+        <FIELD NAME="sizex" TYPE="char" LENGTH="10" NOTNULL="true" DEFAULT="20%" SEQUENCE="false" COMMENT="The width of the box including unit" PREVIOUS="anchory" NEXT="sizey"/>
+        <FIELD NAME="sizey" TYPE="char" LENGTH="10" NOTNULL="true" DEFAULT="10%" SEQUENCE="false" COMMENT="the heigh of the box including units" PREVIOUS="sizex" NEXT="onsessions"/>
+        <FIELD NAME="onsessions" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Does the count from and to refer to page loads or sessions/visits?" PREVIOUS="sizey" NEXT="theme"/>
+        <FIELD NAME="theme" TYPE="char" LENGTH="50" NOTNULL="false" SEQUENCE="false" COMMENT="what theme to apply this to" PREVIOUS="onsessions" NEXT="pageid"/>
+        <FIELD NAME="pageid" TYPE="char" LENGTH="255" NOTNULL="true" DEFAULT="page" SEQUENCE="false" COMMENT="a substring to compare to the page id, this is used to filter which page the page_hint should appear on." PREVIOUS="theme" NEXT="pageclass"/>
+        <FIELD NAME="pageclass" TYPE="char" LENGTH="255" NOTNULL="true" DEFAULT="path" SEQUENCE="false" COMMENT="a substring to compare to the page classes, this is used to filter which page the page_hint should appear on." PREVIOUS="pageid" NEXT="displayfrom"/>
+        <FIELD NAME="displayfrom" TYPE="int" LENGTH="6" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="The visit on which to start displaying this." PREVIOUS="pageclass" NEXT="displayuntil"/>
+        <FIELD NAME="displayuntil" TYPE="int" LENGTH="6" NOTNULL="true" DEFAULT="1" SEQUENCE="false" COMMENT="The visit from which this should no longer be displayed" PREVIOUS="displayfrom" NEXT="time"/>
+        <FIELD NAME="time" TYPE="int" LENGTH="4" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="display the page_hint for how long. 0 here will mean that the page_hint is visible until the user clicks on it." PREVIOUS="displayuntil" NEXT="sequence"/>
+        <FIELD NAME="sequence" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="what number in the sequence is this? page_hints to be shown on the same pages with the same sequence number will be displayed together" PREVIOUS="time" NEXT="forguests"/>
+        <FIELD NAME="forguests" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="should this be displayed to guests as well?" PREVIOUS="sequence" NEXT="editoronly"/>
+        <FIELD NAME="editoronly" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Should this page_hint on be displayed if a user can edit a page? 0 means the page_hint will show for anyone, 1 means it will show only for editors." PREVIOUS="forguests" NEXT="editingonly"/>
+        <FIELD NAME="editingonly" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Only show this page_hint when editing mode is on." PREVIOUS="editoronly" NEXT="lang"/>
+        <FIELD NAME="lang" TYPE="char" LENGTH="25" NOTNULL="false" SEQUENCE="false" COMMENT="Only display for this language, ignored if empty" PREVIOUS="editingonly" NEXT="header"/>
+        <FIELD NAME="header" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false" COMMENT="An optional header for the page_hint" PREVIOUS="lang" NEXT="body"/>
+        <FIELD NAME="body" TYPE="char" LENGTH="1333" NOTNULL="true" SEQUENCE="false" COMMENT="the main body of text to be presented in the page_hint" PREVIOUS="header" NEXT="footer"/>
+        <FIELD NAME="footer" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false" COMMENT="an optional footer which will be displayed underneath the page_hint." PREVIOUS="body"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+      </KEYS>
+    </TABLE>
+    <TABLE NAME="local_page_hints_tracker" COMMENT="Keeps track of which users have seen the page_hints" PREVIOUS="local_page_hints_instances">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true" NEXT="noteid"/>
+        <FIELD NAME="noteid" TYPE="int" LENGTH="20" NOTNULL="true" SEQUENCE="false" COMMENT="which note instance does this refer to?" PREVIOUS="id" NEXT="userid"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="20" NOTNULL="true" SEQUENCE="false" COMMENT="the user this refers to" PREVIOUS="noteid" NEXT="hits"/>
+        <FIELD NAME="hits" TYPE="int" LENGTH="20" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="hows many hits have there been from this user on this page_hint" PREVIOUS="userid" NEXT="lastsession"/>
+        <FIELD NAME="lastsession" TYPE="char" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="the last session key where this was tracked" PREVIOUS="hits" NEXT="optout"/>
+        <FIELD NAME="optout" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="boolean value for future use so that users can opt out of future messages" PREVIOUS="lastsession"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id" NEXT="noteinstance"/>
+        <KEY NAME="noteinstance" TYPE="foreign" FIELDS="noteid" REFTABLE="local_page_hints_instances" REFFIELDS="id" PREVIOUS="primary" NEXT="user"/>
+        <KEY NAME="user" TYPE="foreign" FIELDS="userid" REFTABLE="user" REFFIELDS="id" COMMENT="userid to mdl_user.id" PREVIOUS="noteinstance"/>
+      </KEYS>
+    </TABLE>
+  </TABLES>
+</XMLDB>
