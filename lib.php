@@ -2,62 +2,90 @@
 global $DB;
 if($DB->record_exists('config_plugins', array('plugin'=>'local_page_hints'))){
     $skip = optional_param('annoskip', null, PARAM_TEXT);
-    global $CFG, $PAGE, $USER, $OUTPUT;
+    global $CFG, $PAGE, $USER;
     $hits = local_page_hints_hit();
-    $printed = array();
-    $triggers = array();
-    $follows = array();
-    $CFG->additionalhtmltopofbody .= '<div style="" id="local_page_hints">'.PHP_EOL;
+    $html = html_writer::start_tag('div', array('id' => 'local_page_hints'));
     if($PAGE->pagetype == 'local_page_hint-new'){
-        $CFG->additionalhtmltopofbody .= '<div style="width:200px;min-height:100px;" class="page_hint" id="loc_anno_demo">'.PHP_EOL
-        .'<div class="header"><img class="icon" src="'.$OUTPUT->pix_url('icon', 'local_page_hints').'" alt="'.get_string('pluginname', 'local_page_hints').'"/><h3></h3></div>'.PHP_EOL
-        .'<div class="body"><p>'.get_string('defaultbody', 'local_page_hints').'</p></div>'.PHP_EOL
-        .'<div class="footer"><p>'.get_string('defaultfooter', 'local_page_hints').'</p></div>'.PHP_EOL
-        .'</div>'.PHP_EOL;
+		$html .= local_page_hints_print_demo();
     }
     if($hits){
-        //loop one establishes any notes which need to be displayed in sequence
+		$hints = array();
+	
+        //loop 1 builds the note objects inc info on sequence
         foreach ($hits as $hit){
-            $triggers[$hit->id]=$hit->sequence;
+			if(!isset($hints[$hit->id])){
+				$hints[$hit->id] = new stdclass();
+			}
+			$hints[$hit->id]->id = $hit->id;
+			$hints[$hit->id]->content = $hit;
+			$hints[$hit->id]->follows = $hit->sequence;
+			$hints[$hit->id]->shown = 0;
+			$hints[$hit->id]->delay = $hit->time * 1000;
+			if(!isset($hints[$hit->id]->triggers)){
+				$hints[$hit->id]->triggers = array();
+			}
+			
+			if($hit->sequence > 0)
+			{
+				if(!isset($hints[$hit->sequence]))
+				{
+					$hints[$hit->sequence] = new stdclass();
+					$hints[$hit->sequence]->triggers = array();
+				}
+				$hints[$hit->sequence]->triggers[] = $hit->id;
+			}		
         }
-        //loop two prints out the notes
-        foreach ($hits as $hit){
-            if($skip !== $hit->id){
-                if(array_key_exists($hit->id, $triggers)){
-                    $insequence = true;
-                }
-                else{
-                    $insequence = false;
-                }
-                $print = local_page_hints_print($hit,$insequence);
+		
+        //loop 2 prints out the notes
+        foreach ($hints as &$hint){
+            if($skip !== $hint->id){
+                $print = local_page_hints_print($hint->content,($hint->follows > 0));
                 if($print){
-                    $CFG->additionalhtmltopofbody .= $print.PHP_EOL;
-                    $printed[] = $hit->id;
-                    $delays[$hit->id] = $hit->time * 1000;
+                    $html .= $print.PHP_EOL;
                 }
                 else{
                     //if we arent printing this we need to take it out of the sequence
-                    unset($triggers[$hit->id]);
+                    unset($hint);
                 }
             }
         }
-        $follows = array();
-        foreach($triggers as $child=> $parent){
-            $follows[$parent][] = $child;
-            //debugging('Parent '.$parent.' spawns '.$child);
-        }
+		unset($hint);
         
     }
-    $CFG->additionalhtmltopofbody .= '</div>'.PHP_EOL;
-
-    if(count($printed) > 0){
-        $jsmodule = array(
-            'name'     => 'local_page_hints_lib',
-            'requires' => array('base','node', 'anim'),
-            'fullpath' => '/local/page_hints/javascript/lib.js'
-        );
-        $PAGE->requires->js_init_call('M.local_page_hints.init', array($printed, $delays, $triggers, $follows), false, $jsmodule);
+    $html .= html_writer::end_tag('div');
+	$CFG->additionalhtmltopofbody .= $html;
+    if(isset($hints) && is_array($hints) && count($hints)){
+		$hintarray = array(); //a true array that JS will be happy with.
+		foreach($hints as $hint){
+			$hintarray[] = $hint;
+		}
+	
+		$PAGE->requires->yui_module('moodle-local_page_hints-pagehints', 'M.local.pagehints',
+            array(array(
+                'hints' => $hintarray,
+            )));
     }
+}
+
+function local_page_hints_print_demo(){
+	global $OUTPUT;
+	$html = html_writer::start_tag('div', array('id' => 'loc_anno_demo', 'class'=>'page_hint', 'style'=>'width:200px;min-height:100px;'));
+	
+	$html .= html_writer::start_tag('div', array('class'=>'header'));
+	$html .= html_writer::empty_tag('img', array('class'=>'icon', 'src'=>$OUTPUT->pix_url('icon', 'local_page_hints'), 'alt'=>get_string('pluginname', 'local_page_hints')));
+	$html .= html_writer::tag('h3', '');
+	$html .= html_writer::end_tag('div');
+	
+	$html .= html_writer::start_tag('div', array('class'=>'body'));
+	$html .= html_writer::tag('p', get_string('defaultbody', 'local_page_hints'));
+	$html .= html_writer::end_tag('div');
+
+	$html .= html_writer::start_tag('div', array('class'=>'footer'));
+	$html .= html_writer::tag('p', get_string('defaultfooter', 'local_page_hints'));
+	$html .= html_writer::end_tag('div');
+	
+	$html .= html_writer::end_tag('div');
+	return $html;
 }
 
 //This function checks to find any page_hints which should be displayed
@@ -66,52 +94,45 @@ function local_page_hints_hit(){
     $output = '';	
     //start by building a few parts of the WHERE specific to what's on our page
     
+    $sql = 'SELECT * from {local_page_hints_instances}'.PHP_EOL
+          .'WHERE ';
+	$attr = array();
     //page editor?
     if($PAGE->user_allowed_editing()){
-        $editoronly = '';
         //editing now?
-        if($PAGE->user_is_editing()){
-            $editingonly = '';
-        }
-        else{
-            $editingonly = 'editingonly = 0 AND'.PHP_EOL;
+        if(!$PAGE->user_is_editing()){
+            $sql .= 'editingonly = 0 AND'.PHP_EOL;
         }
     }
     else{
-        $editoronly = 'editoronly = 0 AND'.PHP_EOL;
-        $editingonly = '';
+        $sql .= 'editoronly = 0 AND '.PHP_EOL;;
     }
     
     //language
     if(isloggedin()){
-        $lang = '(lang IS NULL OR lang LIKE "%'.$USER->lang .'%") AND'.PHP_EOL;
-    }
-    else{
-        $lang = '';
+        $sql .= "(lang IS NULL OR lang LIKE ?) AND".PHP_EOL;
+		$attr[] = $USER->lang;
     }
     
     //guest?
     if(!isloggedin() || isguestuser()){
-        $guest = 'forguests = 1 AND'.PHP_EOL;
-    }
-    else{
-        $guest = '';
+        $sql .= 'forguests = 1 AND'.PHP_EOL;
     }
     
     //theme
-    $theme = '(theme IS NULL OR theme LIKE "'.$PAGE->theme->name.'") AND'.PHP_EOL;
+    $sql .= "(theme IS NULL OR theme LIKE ?) AND".PHP_EOL;
+	$attr[] = $PAGE->theme->name;
 
-    $sql = 'SELECT * from {local_page_hints_instances}'.PHP_EOL
-          .'WHERE '.$editoronly
-          .$editingonly
-          .$lang
-          .$guest
-          .$theme
-          .'"'.$PAGE->bodyid.'" LIKE concat("%", pageid, "%") AND'.PHP_EOL
-          .'"'.$PAGE->bodyclasses.'" LIKE concat("%", pageclass, "%") AND'.PHP_EOL
-          .'enabled = 1';
+    $sql .= "? LIKE concat('%', pageid, '%') AND".PHP_EOL;
+	$attr[] = $PAGE->bodyid;
+		  
+		  
+    $sql .= "? LIKE concat('%', pageclass, '%') AND".PHP_EOL;
+	$attr[] = $PAGE->bodyclasses;
+	
+    $sql .= 'enabled = 1';
     //debugging($sql);
-    $hits = $DB->get_records_sql($sql);
+    $hits = $DB->get_records_sql($sql, $attr);
     if(count($hits) > 0){
         //debugging("hit!");
         return $hits;
@@ -182,14 +203,9 @@ function local_page_hint_track($userid,$note,$optout = 0){
 }
 
 function local_page_hints_print($hit, $insequence = false){
-    global $PAGE, $USER, $OUTPUT;
+    global $USER, $OUTPUT;
     if(local_page_hint_track($USER->id,$hit)){
-        if(strstr($PAGE->url,'?')){
-            $skipurl = $PAGE->url.'&annoskip='.$hit->id;
-        }
-        else{
-            $skipurl = $PAGE->url.'?annoskip='.$hit->id;
-        }
+        $skipurl = new moodle_url('', array('annoskip'=>$hit->id));
     
         if($insequence){
             $class = 'page_hint insequence';
@@ -197,13 +213,31 @@ function local_page_hints_print($hit, $insequence = false){
         else{
             $class = 'page_hint';
         }
+		
         $style =  local_page_hints_get_style($hit);
-        return '<div style="'.$style.'" class="'.$class.'" id="loc_anno_'.$hit->id.'">'.PHP_EOL
-              .'<div class="header"><img class="icon" src="'.$OUTPUT->pix_url('icon', 'local_page_hints').'" alt="'.get_string('pluginname', 'local_page_hints').'"/><h3>'.$hit->header.'</h3></div>'.PHP_EOL
-              .'<div class="body"><p>'.$hit->body.'</p></div>'.PHP_EOL
-              .'<div class="footer"><p>'.$hit->footer.'</p></div>'.PHP_EOL
-              .'<div class="nojs"><a href="'.$skipurl.'">'.get_string('dismiss','local_page_hints').'</a></div>'.PHP_EOL
-              .'</div>';
+		
+		$html = html_writer::start_tag('div', array('id' => 'loc_anno_'.$hit->id, 'class'=>$class, 'style'=>$style));
+		
+		$html .= html_writer::start_tag('div', array('class'=>'header'));
+		$html .= html_writer::empty_tag('img', array('class'=>'icon', 'src'=>$OUTPUT->pix_url('icon', 'local_page_hints'), 'alt'=>get_string('pluginname', 'local_page_hints')));
+		$html .= html_writer::tag('h3', $hit->header);
+		$html .= html_writer::end_tag('div');
+		
+		$html .= html_writer::start_tag('div', array('class'=>'body'));
+		$html .= html_writer::tag('p', $hit->body);
+		$html .= html_writer::end_tag('div');
+
+		$html .= html_writer::start_tag('div', array('class'=>'footer'));
+		$html .= html_writer::tag('p', $hit->footer);
+		$html .= html_writer::end_tag('div');
+
+		$html .= html_writer::start_tag('div', array('class'=>'nojs'));
+		$html .= html_writer::link($skipurl, get_string('dismiss','local_page_hints'));
+		$html .= html_writer::end_tag('div');
+				
+		$html .= html_writer::end_tag('div');
+		
+		return $html;
     }
     else{
         return false;

@@ -1,6 +1,6 @@
 <?php
 
-$plugin->version  = 2012083000;   // The (date) version of this plugin
+$plugin->version  = 2013012400;   // The (date) version of this plugin
 $plugin->requires = 2011120100;   // Requires this Moodle version
-$plugin->maturity = MATURITY_ALPHA;
-$plugin->release = '0.4';
+$plugin->maturity = MATURITY_BETA;
+$plugin->release = '0.5';
