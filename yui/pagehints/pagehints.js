@@ -21,31 +21,36 @@ YUI.add('moodle-local_page_hints-pagehints',
               */
             initializer : function() {
                 this.hints = this.get('hints');
+				var id;
+				for (id in this.hints) {
+					if (!this.hints.hasOwnProperty(id)) {
+						continue;
+					}
+					if (this.hints[id].follows == 0) {
+						this.hints[id].shown = 0;
 
-                Y.Array.each(this.hints, function (hint) {
-					var id = hint.id;
-                    this.hints[id].shown = 0;
-                    this.hints[id].div = Y.one('#loc_anno_'+id);
-
-                    if(this.hints[id].follows == 0){
-                        this.open_note(id);
-                    }
-					
-                    this.hints[id].div.on('click', function() {
-                        this.close_note(id);
-                    }, this);
-                }, this);
+						if(this.hints[id].follows == 0){
+							this.open_note(id);
+						}
+					}
+				}
             },
             open_note : function(id) {
                 if(this.hints[id].shown === 0){
                     this.hints[id].shown = 1;
-
+					
+                    this.hints[id].div = Y.one('#loc_anno_'+id);
+					
                     this.hints[id].anim = new Y.Anim({
                         node: this.hints[id].div,
                         to: { opacity: 1 },
                         from: { opacity: 0 },
                         duration: 0.5
                     });
+					
+                    this.hints[id].div.on('click', function() {
+                        this.close_note(id);
+                    }, this);
 
                     this.hints[id].div.setStyle('display', 'block');
                     this.hints[id].anim.run();
@@ -89,17 +94,6 @@ YUI.add('moodle-local_page_hints-pagehints',
             ATTRS : {
                 hints : {
                     'value' : '',
-					'getter': function(val) {
-						if (val) {
-							var hints = new Array();
-							Y.Array.each(val, function (hint) {
-								hints[hint.id] = hint;
-							});
-							return hints;
-						} else {
-							return null;
-						}
-					},
                 }
             }
         });
