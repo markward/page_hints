@@ -64,9 +64,12 @@ class page_hint_form extends moodleform {
         $mform->addElement('hidden', 'id',
                 get_string('id', 'local_page_hints'), '');
         $mform->setDefault('id', $hint->id);
+        $mform->setType('id', PARAM_INT);
+        
         $mform->addElement('checkbox', 'enabled',
                 get_string('enabled', 'local_page_hints'), '');
         $mform->setDefault('enabled', $hint->enabled);
+        $mform->setType('enabled', PARAM_BOOL);
         
         //positioning
         $mform->addElement('header', 'hint_positioning',
@@ -76,6 +79,7 @@ class page_hint_form extends moodleform {
                 get_string('positionx', 'local_page_hints'));        
         $mform->addRule('positionx', get_string('numeric', 'local_page_hints'),'numeric',null,'client');
         $mform->setDefault('positionx', $hint->positionx);
+        $mform->setType('positionx', PARAM_INT);
         $mform->addHelpButton('positionx', 'positionx', 'local_page_hints');
         $mform->addRule('positionx', get_string('required', 'local_page_hints'),'required',null,'client');
         
@@ -83,6 +87,7 @@ class page_hint_form extends moodleform {
                 get_string('positiony', 'local_page_hints'));        
         $mform->addRule('positiony', get_string('numeric', 'local_page_hints'),'numeric',null,'client');
         $mform->setDefault('positiony', $hint->positiony);
+        $mform->setType('positiony', PARAM_INT);
         $mform->addHelpButton('positiony', 'positiony', 'local_page_hints');
         $mform->addRule('positiony', get_string('required', 'local_page_hints'),'required',null,'client');
         
@@ -114,12 +119,14 @@ class page_hint_form extends moodleform {
         $mform->addElement('text', 'sizex',
                 get_string('sizex', 'local_page_hints'));        
         $mform->addRule('sizex', get_string('numeric', 'local_page_hints'),'numeric',null,'client');
+        $mform->setType('sizex', PARAM_INT);
         $mform->setDefault('sizex', $hint->sizex);
         $mform->addRule('sizex', get_string('required', 'local_page_hints'),'required',null,'client');
         
         $mform->addElement('text', 'sizey',
                 get_string('sizey', 'local_page_hints'));        
         $mform->addRule('sizey', get_string('numeric', 'local_page_hints'),'numeric',null,'client');
+        $mform->setType('sizey', PARAM_INT);
         $mform->setDefault('sizey', $hint->sizey);   
         $mform->addRule('sizey', get_string('required', 'local_page_hints'),'required',null,'client');
         
@@ -135,15 +142,18 @@ class page_hint_form extends moodleform {
         
         $mform->addElement('text', 'header',
                 get_string('header', 'local_page_hints'));        
+        $mform->setType('header', PARAM_TEXT);
         $mform->setDefault('header', $hint->header);
         
         $mform->addElement('textarea', 'body',
                 get_string('body', 'local_page_hints'),'wrap="virtual" rows="5" cols="70"');        
+        $mform->setType('body', PARAM_TEXT);
         $mform->setDefault('body', $hint->body);
         $mform->addRule('body', get_string('required', 'local_page_hints'),'required',null,'client');
         
         $mform->addElement('text', 'footer',
-                get_string('footer', 'local_page_hints'));        
+                get_string('footer', 'local_page_hints'));      
+        $mform->setType('footer', PARAM_TEXT);
         $mform->setDefault('footer', $hint->footer);
         
         //pagefilter
@@ -152,12 +162,14 @@ class page_hint_form extends moodleform {
         
         $mform->addElement('text', 'pageid',
                 get_string('pageid', 'local_page_hints'));        
+        $mform->setType('pageid', PARAM_TEXT);
         $mform->setDefault('pageid', $hint->pageid);
         $mform->addRule('pageid', get_string('required', 'local_page_hints'),'required',null,'client');
         $mform->addHelpButton('pageid', 'pageid', 'local_page_hints');
         
         $mform->addElement('text', 'pageclass',
                 get_string('pageclass', 'local_page_hints'));        
+        $mform->setType('pageclass', PARAM_TEXT);
         $mform->setDefault('pageclass', $hint->pageclass);
         $mform->addRule('pageclass', get_string('required', 'local_page_hints'),'required',null,'client');
         $mform->addHelpButton('pageclass', 'pageclass', 'local_page_hints');
@@ -216,12 +228,14 @@ class page_hint_form extends moodleform {
         $mform->addElement('text', 'displayfrom',
             get_string('displayfrom', 'local_page_hints'));        
         $mform->addRule('displayfrom', get_string('numeric', 'local_page_hints'),'numeric',null,'client');
+        $mform->setType('displayfrom', PARAM_INT);
         $mform->setDefault('displayfrom', $hint->displayfrom);
         $mform->addHelpButton('displayfrom', 'displayfrom', 'local_page_hints');
         
         $mform->addElement('text', 'displayuntil',
             get_string('displayuntil', 'local_page_hints'));        
         $mform->addRule('displayuntil', get_string('numeric', 'local_page_hints'),'numeric',null,'client');
+        $mform->setType('displayuntil', PARAM_INT);
         $mform->setDefault('displayuntil', $hint->displayuntil);
         $mform->addHelpButton('displayuntil', 'displayuntil', 'local_page_hints');
        
